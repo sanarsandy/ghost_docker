@@ -41,7 +41,7 @@ services:
       db:
         condition: service_healthy
     networks:
-      - ${CONTAINER_PREFIX:-ghost}_network
+      - ghost_net
     deploy:
       resources:
         limits:
@@ -64,7 +64,7 @@ services:
     volumes:
       - ./data/mysql:/var/lib/mysql
     networks:
-      - ${CONTAINER_PREFIX:-ghost}_network
+      - ghost_net
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
       interval: 10s
@@ -81,6 +81,6 @@ services:
 # NETWORKS
 # ============================================
 networks:
-  ${CONTAINER_PREFIX:-ghost}_network:
+  ghost_net:
     name: ${CONTAINER_PREFIX:-ghost}_network
     driver: bridge
