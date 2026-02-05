@@ -6,18 +6,18 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ghost-app
+    container_name: ${CONTAINER_PREFIX:-ghost}-app
     restart: always
     ports:
-      # Only expose to localhost (Nginx will proxy)
-      - "127.0.0.1:2368:2368"
+      # Port configurable via .env
+      - "127.0.0.1:${GHOST_PORT:-2368}:2368"
     environment:
-      # URL Configuration (your actual domain with HTTPS)
+      # URL Configuration
       url: ${GHOST_URL}
       
       # Database Configuration
       database__client: mysql
-      database__connection__host: db
+      database__connection__host: ${CONTAINER_PREFIX:-ghost}-db
       database__connection__port: 3306
       database__connection__user: ghost
       database__connection__password: ${DB_GHOST_PASSWORD}
@@ -41,8 +41,7 @@ services:
       db:
         condition: service_healthy
     networks:
-      - ghost_network
-    # Resource limits for security
+      - ${CONTAINER_PREFIX:-ghost}_network
     deploy:
       resources:
         limits:
@@ -54,7 +53,7 @@ services:
   # ============================================
   db:
     image: mysql:8.0
-    container_name: ghost-db
+    container_name: ${CONTAINER_PREFIX:-ghost}-db
     restart: always
     command: --default-authentication-plugin=mysql_native_password
     environment:
@@ -65,14 +64,13 @@ services:
     volumes:
       - ./data/mysql:/var/lib/mysql
     networks:
-      - ghost_network
+      - ${CONTAINER_PREFIX:-ghost}_network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
-    # Resource limits
     deploy:
       resources:
         limits:
@@ -83,6 +81,6 @@ services:
 # NETWORKS
 # ============================================
 networks:
-  ghost_network:
-    name: ghost_network
+  ${CONTAINER_PREFIX:-ghost}_network:
+    name: ${CONTAINER_PREFIX:-ghost}_network
     driver: bridge
