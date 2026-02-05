@@ -1,0 +1,85 @@
+services:
+  # ============================================
+  # GHOST APPLICATION
+  # ============================================
+  ghost:
+    build: .
+    image: my-ghost-blog:latest
+    restart: always
+    ports:
+      # Only expose to localhost (Nginx will proxy)
+      - "127.0.0.1:2368:2368"
+    environment:
+      # URL Configuration (your actual domain with HTTPS)
+      url: ${GHOST_URL}
+      
+      # Database Configuration
+      database__client: mysql
+      database__connection__host: db
+      database__connection__port: 3306
+      database__connection__user: ghost
+      database__connection__password: ${DB_GHOST_PASSWORD}
+      database__connection__database: ghost
+      
+      # Mail Configuration (SMTP)
+      mail__transport: SMTP
+      mail__from: ${MAIL_FROM}
+      mail__options__host: ${SMTP_HOST}
+      mail__options__port: ${SMTP_PORT}
+      mail__options__secure: ${SMTP_SECURE:-false}
+      mail__options__auth__user: ${SMTP_USER}
+      mail__options__auth__pass: ${SMTP_PASSWORD}
+      
+      # Privacy & Performance
+      privacy__useUpdateCheck: "false"
+      privacy__useGravatar: "false"
+    volumes:
+      - ./data/ghost:/var/lib/ghost/content
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - ghost_network
+    # Resource limits for security
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+  # ============================================
+  # DATABASE - MySQL
+  # ============================================
+  db:
+    image: mysql:8.0
+    restart: always
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ghost
+      MYSQL_USER: ghost
+      MYSQL_PASSWORD: ${DB_GHOST_PASSWORD}
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    networks:
+      - ghost_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+# ============================================
+# NETWORKS
+# ============================================
+networks:
+  ghost_network:
+    name: ghost_network
+    driver: bridge

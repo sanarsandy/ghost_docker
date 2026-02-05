@@ -1,0 +1,22 @@
+# Environment files (contain secrets)
+.env
+.env.local
+.env.production
+
+# Docker volumes (if mounted locally)
+data/
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+acme.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
